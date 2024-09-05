@@ -1,0 +1,960 @@
+boolean-literal ::= (one of)
+  true false
+
+integer-literal ::=
+  binary-literal
+  octal-literal
+  decimal-literal
+  hexadecimal-literal
+
+binary-digit ::= (one of)
+  0 1 _
+
+binary-literal ::= (token)
+  '0b' binary-digit+
+
+octal-digit ::= (one of)
+  0 1 2 3 4 5 6 7 _
+
+octal-literal ::= (token)
+  '0o' octal-digit+
+
+decimal-digit-head ::= (one of)
+  0 1 2 3 4 5 6 7 8 9
+
+decimal-digit ::= (one of)
+  0 1 2 3 4 5 6 7 8 9 _
+
+decimal-literal ::= (token)
+  decimal-digit-head decimal-digit*
+
+hexadecimal-digit ::= (one of)
+  0 1 2 3 4 5 6 7 8 9 A B C D E F a b c d e f _
+
+hexadecimal-literal ::= (token)
+  '0x' hexadecimal-digit+
+
+
+floating-point-literal ::= (token)
+  decimal-fractional-constant exponent?
+  decimal-literal exponent
+
+decimal-fractional-constant ::= (token)
+  decimal-literal '.' floating-point-suffix
+
+exponent ::= (token)
+  'e' exponent-sign? floating-point-suffix
+  'E' exponent-sign? floating-point-suffix
+
+exponent-sign ::= (one of)
+  + -
+
+floating-point-suffix ::= (token)
+  floating-point-suffix-head decimal-literal?
+
+floating-point-suffix-head ::= (one of)
+  0 1 2 3 4 5 6 7 8 9
+
+
+unicode-scalar-literal ::= (token)
+  single-quote escape-char single-quote
+  single-quote c-char single-quote
+
+escape-char ::=
+  simple-escape
+  unicode-escape
+
+simple-escape ::= (one of)
+  \0 \t \n \r \' \"
+
+single-quote ::= (one of)
+  '
+
+unicode-escape ::= (token)
+  '\u' hexadecimal-digit+
+
+c-char ::= (regexp)
+  [^']
+
+
+string-literal ::=
+  simple-string
+  multiline-string
+
+simple-string ::= (token)
+  '"' simple-quoted-text-item* '"'
+
+simple-quoted-text-item ::=
+  escape-char
+  s-char
+
+s-char ::= (regexp)
+  [^"\x0a\x0d]
+
+multiline-string ::= (token)
+  '"""' multiline-quoted-text-item+ '"""'
+
+multiline-quoted-text-item ::=
+  escape-char
+  m-char
+
+m-char ::= (regexp)
+  [^"]|"(?!"")
+
+
+identifier ::=
+  identifier-token
+  contextual-keyword
+
+identifier-token ::= (token)
+  identifier-head identifier-tail*
+  '`' bq-char+ '`'
+
+identifier-head ::= (regexp)
+  [_\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}]
+
+identifier-tail ::= (regexp)
+  [\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Mn}\p{Mc}\p{Nl}\p{Nd}\p{Pc}]
+
+bq-char ::= (regexp)
+  [^`\x0a\x0d]
+
+contextual-keyword ::= (one of)
+  mutating size any in
+
+
+raw-operator ::= (regexp)
+  [-*/^%&!?\p{Sm}]
+
+
+source-file ::=
+  whitespace* (module-scope-stmt-list whitespace*)?
+
+module-scope-stmt-list ::= (no-implicit-whitespace)
+  module-scope-stmt
+  module-scope-stmt-list stmt-separator module-scope-stmt
+
+module-scope-stmt ::=
+  module-scope-decl
+  import-decl
+
+module-scope-decl ::=
+  namespace-decl
+  trait-decl
+  type-alias-decl
+  product-type-decl
+  extension-decl
+  conformance-decl
+  binding-decl
+  function-decl
+  subscript-decl
+  operator-decl
+
+import-decl ::=
+  'import' identifier
+
+
+decl-attribute ::=
+  attribute-name attribute-argument-list?
+
+attribute-name ::= (token)
+  '@' name
+
+attribute-argument-list ::=
+ '(' attribute-argument (',' attribute-argument)* ')'
+
+attribute-argument ::=
+ simple-string
+ integer-literal
+
+
+access-modifier ::=
+  'public'
+
+
+member-modifier ::=
+  receiver-modifier
+  static-modifier
+
+receiver-modifier ::= (one of)
+  sink inout yielded
+
+static-modifier ::=
+  'static'
+
+
+conformance-list ::=
+  ':' name-type-expr (',' name-type-expr)*
+
+
+generic-clause ::=
+  '<' generic-parameter (',' generic-parameter)* where-clause? '>'
+
+generic-parameter ::=
+  generic-type-parameter
+  generic-value-parameter
+
+generic-type-parameter ::=
+  '@type'? identifier '...'? trait-annotation? ('=' type-expr)?
+
+trait-annotation ::=
+  ':' trait-composition
+
+generic-value-parameter ::=
+  '@value' identifier ':' type-expr ('=' expr)?
+
+
+where-clause ::=
+  'where' where-clause-constraint-list
+
+where-clause-constraint-list ::=
+  where-clause-constraint (',' where-clause-constraint)*
+
+where-clause-constraint ::=
+  equality-constraint
+  conformance-constraint
+  value-constraint-expr
+
+equality-constraint ::=
+  name-type-expr '==' type-expr
+
+conformance-constraint ::=
+  name-type-expr ':' trait-composition
+
+value-constraint-expr ::=
+  '@value' expr
+
+trait-composition ::=
+  name-type-expr ('&' name-type-expr)*
+
+
+namespace-decl ::=
+  namespace-head namespace-body
+
+namespace-head ::=
+  access-modifier? 'namespace' identifier
+
+namespace-body ::=
+  '{' namespace-member-list? '}'
+
+namespace-member-list ::= (no-implicit-whitespace)
+  namespace-member
+  namespace-member-list stmt-separator namespace-member
+
+namespace-member ::=
+  namespace-decl
+  trait-decl
+  type-alias-decl
+  product-type-decl
+  extension-decl
+  conformance-decl
+  binding-decl
+  function-decl
+  subscript-decl
+
+
+trait-decl ::=
+  trait-head trait-body
+
+trait-head ::=
+  access-modifier? 'trait' identifier trait-refinement-list?
+
+trait-refinement-list ::=
+  ':' name-type-expr (',' name-type-expr)*
+
+trait-body ::=
+  '{' (trait-requirement-decl | ';')* '}'
+
+trait-requirement-decl ::=
+  associated-decl
+  function-decl
+  subscript-decl
+  property-decl
+
+
+associated-decl ::=
+  associated-type-decl
+  associated-value-decl
+
+associated-type-decl ::=
+  associated-type-head associated-type-constraints? ('=' type-expr)?
+
+associated-type-head ::=
+  'type' identifier
+
+associated-type-constraints ::=
+  conformance-list
+  conformance-list? where-clause
+
+associated-value-decl ::=
+  associated-value-head where-clause? ('=' expr)?
+
+associated-value-head ::=
+  'value' identifier
+
+
+product-type-decl ::=
+  product-type-head product-type-body
+
+product-type-head ::=
+  access-modifier? 'type' identifier generic-clause? conformance-list?
+
+product-type-body ::=
+  '{' (product-type-member-decl | ';')* '}'
+
+product-type-member-decl ::=
+  function-decl
+  deinit-decl
+  subscript-decl
+  property-decl
+  binding-decl
+  product-type-decl
+  type-alias-decl
+
+
+type-alias-decl ::=
+  type-alias-head '=' type-expr
+
+type-alias-head ::=
+  access-modifier? 'typealias' identifier generic-clause?
+
+union-decl ::=
+  product-type-decl ('|' product-type-decl)*
+
+
+extension-decl ::=
+  extension-head extension-body
+
+extension-head ::=
+  access-modifier? 'extension' type-expr where-clause?
+
+extension-body ::=
+  '{' (extension-member-decl | ';')* '}'
+
+extension-member-decl ::=
+  function-decl
+  subscript-decl
+  product-type-decl
+  type-alias-decl
+
+
+conformance-decl ::=
+  conformance-head conformance-body
+
+conformance-head ::=
+  access-modifier? 'conformance' type-expr conformance-list where-clause?
+
+conformance-body ::=
+  '{' (conformance-member-decl | ';')* '}'
+
+conformance-member-decl ::=
+  function-decl
+  subscript-decl
+  product-type-decl
+  type-alias-decl
+
+
+binding-decl ::=
+  binding-head binding-initializer?
+
+binding-head ::=
+  access-modifier? member-modifier* binding-pattern
+
+binding-initializer ::=
+  '=' expr
+
+
+function-decl ::=
+  memberwise-init-decl
+  function-head function-signature function-body?
+
+memberwise-init-decl ::=
+  access-modifier? 'memberwise' 'init'
+
+deinit-decl ::=
+  'deinit' brace-stmt
+
+function-head ::=
+  access-modifier? member-modifier* function-decl-identifier generic-clause? capture-list?
+
+function-decl-identifier ::=
+  'init'
+  'fun' identifier
+  'fun' operator-notation operator
+
+function-body ::=
+  method-bundle-body
+  brace-stmt
+
+method-bundle-body ::=
+  '{' method-impl+ '}'
+
+operator ::= (token)
+  raw-operator+
+
+
+function-signature ::=
+  '(' parameter-list? ')' receiver-effect? ('->' type-expr)? type-aliases-clause?
+
+type-aliases-clause ::=
+  'where' type-aliases-clause-item (',' type-aliases-clause-item)*
+
+type-aliases-clause-item ::=
+  'typealias'identifier '=' type-expr
+
+
+method-impl ::=
+  method-introducer brace-stmt?
+
+method-introducer ::= (one of)
+  let sink inout set
+
+
+subscript-decl ::=
+  subscript-head subscript-signature subscript-body
+
+subscript-head ::=
+  access-modifier? member-modifier* 'subscript' identifier? generic-clause? capture-list?
+
+subscript-identifier ::=
+  'subscript' identifier
+
+subscript-body ::=
+  '{' subscript-impl+ '}'
+
+
+subscript-signature ::=
+  '(' parameter-list? ')' receiver-effect? ':' 'var'? type-expr
+
+
+subscript-impl ::=
+  subscript-introducer brace-stmt?
+
+subscript-introducer ::= (one of)
+  let sink inout set
+
+
+property-decl ::=
+  property-head property-annotation subscript-body
+
+property-head ::=
+  member-modifier* 'property' identifier
+
+property-annotation ::=
+  ':' type-expr
+
+
+parameter-list ::=
+  parameter-decl (',' parameter-decl)*
+
+parameter-decl ::=
+  (identifier | '_') identifier? (':' parameter-type-expr)? default-value?
+
+default-value ::=
+  '=' expr
+
+
+operator-decl ::=
+  'operator' operator-notation operator (':' precedence-group)?
+
+precedence-group ::= (one of)
+  assignment disjunction conjunction comparison fallback range addition multiplication shift
+
+
+capture-list ::=
+  '[' binding-decl (',' binding-decl)* ']'
+
+
+stmt ::=
+  brace-stmt
+  discard-stmt
+  loop-stmt
+  jump-stmt
+  decl-stmt
+  expr
+
+
+brace-stmt ::=
+  '{' stmt-list? '}'
+
+stmt-list ::= (no-implicit-whitespace)
+  stmt
+  stmt-list stmt-separator stmt
+
+stmt-separator ::= (no-implicit-whitespace)
+  horizontal-space* ((newline | ';') horizontal-space?)+
+
+
+discard-stmt ::=
+  '_' '=' expr
+
+
+loop-stmt ::=
+  do-while-stmt
+  while-stmt
+  for-stmt
+
+
+do-while-stmt ::=
+  'do' brace-stmt 'while' expr
+
+
+while-stmt ::=
+  'while' while-condition-list brace-stmt
+
+while-condition-list ::=
+  while-condition-item (',' while-condition-item)*
+
+while-condition-item ::=
+  binding-pattern '=' expr
+  expr
+
+
+for-stmt ::=
+  dor-head for-range for-filter? brace-stmt
+
+for-head ::=
+  'for' binding-decl
+
+for-range ::=
+  'in' expr
+
+for-filter ::=
+  'where' expr
+
+
+jump-stmt ::= (no-implicit-whitespace)
+  conditional-binding-stmt
+  'return' (horizontal-space* expr)?
+  'yield' horizontal-space* expr
+  'break'
+  'continue'
+
+
+conditional-binding-stmt ::=
+  binding-pattern 'else' cond-binding-fallback
+
+conditional-binding-fallback ::=
+  jump-stmt
+  brace-stmt
+  expr
+
+
+decl-stmt ::=
+  type-alias-decl
+  product-type-decl
+  extension-decl
+  conformance-decl
+  function-decl
+  subscript-decl
+  binding-decl
+
+
+expr ::=
+  infix-expr-head infix-expr-tail*
+
+infix-expr-head ::=
+  async-expr
+  await-expr
+  unsafe-expr
+  prefix-expr
+
+
+infix-expr-tail ::=
+  type-casting-tail
+  infix-operator-tail
+
+type-casting-tail ::=
+  type-casting-operator type-expr
+
+infix-operator-tail ::=
+  infix-operator prefix-expr
+
+infix-operator ::=
+  operator
+  '='
+  '=='
+  '<'
+  '>'
+  '..<'
+  '...'
+
+
+async-expr ::=
+  async-expr-head expr
+  async-expr-head '->' type-expr brace-stmt
+
+async-expr-head ::=
+  'async' capture-list?
+
+
+await-expr ::=
+  'await' expr
+
+
+unsafe-expr ::=
+  'unsafe' expr
+
+
+prefix-expr ::= (no-implicit-whitespace)
+  prefix-operator? postfix-expr
+
+prefix-operator ::=
+  prefix-operator-head raw-operator*
+
+prefix-operator-head ::= (regexp)
+  (?:(?![<])[-*/^%&!?\p{Sm}])
+
+
+postfix-expr ::= (no-implicit-whitespace)
+  compound-expr
+  postfix-expr postfix-operator
+
+postfix-operator ::= (token)
+  postfix-operator-head raw-operator*
+
+postfix-operator-head ::= (regexp)
+  (?:(?![>])[-*/^%&!?\p{Sm}])
+
+
+primary-expr ::=
+  scalar-literal
+  compound-literal
+  primary-decl-ref
+  implicit-member-ref
+  lambda-expr
+  selection-expr
+  inout-expr
+  tuple-expr
+  'nil'
+
+
+scalar-literal ::=
+  boolean-literal
+  integer-literal
+  floating-point-literal
+  string-literal
+  unicode-scalar-literal
+
+
+compound-literal ::=
+  buffer-literal
+  map-literal
+
+
+buffer-literal ::=
+  '[' buffer-component-list? ']'
+
+buffer-component-list ::=
+  expr (',' expr)* ','?
+
+
+map-literal ::=
+  '[' map-component-list ']'
+  '[' ':' ']'
+
+map-component-list ::=
+  map-component (',' map-component)* ','?
+
+map-component ::=
+  expr ':' expr
+
+
+primary-decl-ref ::=
+  identifier-expr static-argument-list?
+
+static-argument-list ::=
+  '<' static-argument (',' static-argument)* '>'
+
+static-argument ::=
+  (identifier ':')? (expr | type-expr)
+
+
+implicit-member-ref ::=
+  '.' primary-decl-ref
+
+
+identifier-expr ::=
+  entity-identifier impl-identifier?
+
+entity-identifier ::=
+  identifier
+  function-entity-identifier
+  operator-entity-identifier
+
+function-entity-identifier ::= (token)
+  identifier '(' argument-label+ ')'
+
+operator-entity-identifier ::= (token)
+  operator-notation operator
+
+argument-label ::= (token)
+  identifier ':'
+
+impl-identifier ::= (token)
+  '.' method-introducer
+
+
+inout-expr ::= (no-implicit-whitespace)
+  '&' expr
+
+
+tuple-expr ::=
+  '(' tuple-expr-element-list? ')'
+
+tuple-expr-element-list ::=
+  tuple-expr-element (',' tuple-expr-element)?
+
+tuple-expr-element ::=
+  (identifier ':')? expr
+
+
+compound-expr ::=
+  value-member-expr
+  static-value-member-expr
+  function-call-expr
+  subscript-call-expr
+  primary-expr
+
+
+value-member-expr ::=
+  labeled-member-expr
+  indexed-member-expr
+
+labeled-member-expr ::=
+  primary-expr '.' primary-decl-ref
+
+indexed-member-expr ::=
+  primary-expr '.' member-index
+
+member-index ::= (token)
+  decimal-digit-head+
+
+
+static-value-member-expr ::=
+  type-expr '.' primary-decl-ref
+
+
+function-call-expr ::=
+  function-call-head call-argument-list? ')'
+
+function-call-head ::= (no-implicit-whitespace)
+  primary-expr '('
+
+call-argument-list ::=
+  call-argument (',' call-argument)*
+
+call-argument ::=
+  (identifier ':')? expr
+
+
+subscript-call-expr ::=
+  subscript-call-head call-argument-list? ']'
+
+subscript-call-head ::= (no-implicit-whitespace)
+  primary-expr '['
+
+
+lambda-expr ::=
+  'fun' capture-list? function-signature lambda-body
+
+lambda-body ::=
+  brace-stmt
+
+
+selection-expr ::=
+  conditional-expr
+  match-expr
+
+
+conditional-expr ::=
+  'if' conditional-clause brace-stmt conditional-tail?
+
+conditional-clause ::=
+  conditional-clause-item (',' conditional-clause-item)*
+
+conditional-clause-item ::=
+  binding-pattern '=' expr
+  expr
+
+conditional-tail ::=
+  'else' conditional-expr
+  'else' brace-stmt
+
+match-expr ::=
+  'match' expr '{' match-case* '}'
+
+match-case ::=
+  match-case-head ('where' expr)? brace-stmt
+
+match-case-head ::=
+  binding-decl
+
+
+operator-notation ::= (one of)
+  infix prefix postfix
+
+
+type-casting-operator ::= (one of)
+  as as!
+
+
+type-expr ::=
+  async-type-expr
+  conformance-lens-type-expr
+  existential-type-expr
+  opaque-type-expr
+  indirect-type-expr
+  lambda-type-expr
+  name-type-expr
+  stored-projection-type-expr
+  tuple-type-expr
+  union-type-expr
+  wildcard-type-expr
+  '(' type-expr ')'
+
+
+async-type-expr ::=
+  'async' type-expr
+
+
+conformance-lens-type-expr ::=
+  type-expr '::' type-identifier
+
+
+existential-type-expr ::=
+  'any' trait-composition where-clause?
+
+
+opaque-type-expr ::=
+  'some' trait-composition where-clause?
+  'some' '_'
+
+
+indirect-type-expr ::=
+  'indirect' type-expr
+
+
+lambda-type-expr ::=
+  lambda-environment? '(' lamda-parameter-list? ')' receiver-effect? '->' type-expr
+
+lambda-environment ::=
+  'thin'
+  '[' type-expr ']'
+
+lamda-parameter-list ::=
+  lambda-parameter (',' lambda-parameter)*
+
+lambda-parameter ::=
+  (identifier ':')? type-expr
+
+receiver-effect ::= (one of)
+  inout sink
+
+
+name-type-expr ::=
+  (type-expr '.')? primary-type-decl-ref
+
+primary-type-decl-ref ::=
+  type-identifier type-argument-list?
+
+type-identifier ::=
+  identifier
+
+
+parameter-type-expr ::=
+  parameter-passing-convention? type-expr
+
+parameter-passing-convention ::= (one of)
+  let inout sink yielded
+
+
+stored-projection-type-expr ::=
+  '[' stored-projection-capability type-expr ']'
+
+stored-projection-capability ::=
+  'let'
+  'inout'
+  'yielded'
+
+
+tuple-type-expr ::=
+  '{' tuple-type-element-list? '}'
+
+tuple-type-element-list ::=
+  tuple-type-element (',' tuple-type-element)?
+
+tuple-type-element ::=
+  (identifier ':')? type-expr
+
+
+union-type-expr ::=
+  type-expr ('|' type-expr)+
+
+
+wildcard-type-expr ::=
+  '_'
+
+
+pattern ::=
+  binding-pattern
+  expr-pattern
+  tuple-pattern
+  wildcard-pattern
+
+
+binding-pattern ::=
+  binding-introducer (tuple-pattern | wildcard-pattern | identifier) binding-annotation?
+
+binding-introducer ::=
+  'let'
+  'var'
+  'sink'
+  'inout'
+
+binding-annotation ::=
+  ':' type-expr
+
+
+expr-pattern ::=
+  expr
+
+
+tuple-pattern ::=
+  '(' tuple-pattern-element-list ')'
+
+tuple-pattern-element-list ::=
+  tuple-pattern-element (',' tuple-pattern-element)?
+
+tuple-pattern-element ::=
+  (identifier ':')? pattern
+
+
+wildcard-pattern ::=
+  '_'
+
+
+whitespace ::=
+  horizontal-space
+  newline
+
+horizontal-space ::=
+  hspace
+  single-line-comment
+  block-comment
+
+hspace ::= (regexp)
+  \h
+
+single-line-comment ::= (regexp)
+  //\V*
+
+block-comment ::= (no-implicit-whitespace)
+  block-comment-open '*/'
+  block-comment-open block-comment '*/'
+
+block-comment-open ::= (regexp)
+  /[*](?:[^*/]+|(?:[/]+|[*]+)[^*/])*
+
+newline ::= (regexp)
+  \R
