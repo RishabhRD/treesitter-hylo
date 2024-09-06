@@ -1,6 +1,8 @@
 module.exports = grammar({
   name: 'hylo',
-
+  externals: _ => [
+  ],
+  extras: _ => [],
   rules: {
     // Literals
     boolean_literal: $ => choice('true', 'false'),
@@ -56,11 +58,11 @@ module.exports = grammar({
     s_char: $ => /[^\"\x0a\x0d]/,
     multiline_string: $ => seq('"""', repeat($.multiline_quoted_text_item), '"""'),
     multiline_quoted_text_item: $ => choice($.escape_char, $.m_char),
-m_char: $ => choice(
-  /[^\"]/,
-  seq('"', /[^"]/),
-  seq('"', '"""')
-),
+    m_char: $ => choice(
+      /[^\"]/,
+      seq('"', /[^"]/),
+      seq('"', '"""')
+    ),
 
     // Identifiers
     identifier: $ => choice($.identifier_token, $.contextual_keyword),
@@ -469,16 +471,16 @@ m_char: $ => choice(
       $.postfix_expr
     ),
     prefix_operator: $ => seq($.prefix_operator_head, repeat($.raw_operator)),
-prefix_operator_head: $ => choice(
-  /[^<-]/,
-  seq('-', /[^*/^%&!?\p{Sm}]/)
-),
+    prefix_operator_head: $ => choice(
+      /[^<-]/,
+      seq('-', /[^*/^%&!?\p{Sm}]/)
+    ),
     postfix_expr: $ => seq($.compound_expr, optional(seq($.postfix_expr, $.postfix_operator))),
     postfix_operator: $ => seq($.postfix_operator_head, repeat($.raw_operator)),
-postfix_operator_head: $ => choice(
-  /[^>-]/,
-  seq('-', /[^*/^%&!?\p{Sm}]/)
-),
+    postfix_operator_head: $ => choice(
+      /[^>-]/,
+      seq('-', /[^*/^%&!?\p{Sm}]/)
+    ),
 
     // Primary expressions
     primary_expr: $ => choice(
@@ -774,7 +776,7 @@ postfix_operator_head: $ => choice(
 
     block_comment_open: $ => /[*](?:[^*/]+|(?:[/]+|[*]+)[^*/])*/,
 
-newline: $ => choice('\n', '\r', '\u2028', '\u2029'),
+    newline: $ => choice('\n', '\r', '\u2028', '\u2029'),
     operator_decl: $ => seq(
       'operator',
       $.operator_notation,
