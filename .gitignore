@@ -37,3 +37,6 @@ dist/
 *.wasm
 *.obj
 *.o
+
+test.hylo
+test.ast.json
